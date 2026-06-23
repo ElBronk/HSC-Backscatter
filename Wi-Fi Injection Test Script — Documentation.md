@@ -28,6 +28,8 @@ git clone https://github.com/vanhoefm/wifi-injection
 ```
 
 Follow all setup instructions listed on the repository page (virtual environment, Python requirements, etc.).
+  - NOTE: In libwifi, you will want to go to requirements.txt and change the 'packaging' module version to 26.0
+    (Line should become "packaging==26.0", without the quotes of course)
 
 ### **Step 2 — Install required system tools**
 
