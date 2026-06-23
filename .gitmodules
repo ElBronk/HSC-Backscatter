@@ -1,0 +1,3 @@
+[submodule "wifi-injection"]
+	path = wifi-injection
+	url = https://github.com/vanhoefm/wifi-injection.git
