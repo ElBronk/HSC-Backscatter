@@ -8,6 +8,12 @@ if [ -f ./backscatter.cfg ] && IFS= read -r line < ./backscatter.cfg || [[ -n "$
 else
     # if there is no saved setting, prompt the user
     readarray -t interfaces <<< $(ifconfig | grep -Po '^.*(?=(: flags))')
+
+    # if no interfaces were found, can't do anything
+    if ((${#interfaces} == 0)); then
+        echo 'No interfaces located - exiting...'
+        exit
+    fi
     
     PS3="Select an interface to use: "
     select if_choice in "${interfaces[@]}"
@@ -28,6 +34,7 @@ else
 fi
 
 # use the result of interface selection
+echo "Proceeding with interface \"${interface}\"."
 
 #sudo ifconfig <ifname>mon down
 #sudo ifconfig <ifname> down
