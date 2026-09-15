@@ -2,7 +2,7 @@
 declare txInterface
 declare rxInterface
 
-# if there is no saved setting, prompt the user
+# collect the interfaces available to prompt the user about
 readarray -t interfaces <<< $(ifconfig | grep -Po '^.*(?=(: flags))')
 
 # if no interfaces were found, can't do anything
@@ -51,6 +51,7 @@ if ((${#txInterface} > 12)); then
     txInterface='wlan0'  # assume there are no other wlan's around
 fi
 
+# not strictly necessary, but helpful to see wifi injection packets show up to confirm functionality
 echo "About to inject packets; Waiting 10s to allow for Wireshark to be started..."
 sleep 10
 echo "Done sleeping; beginning injection"
@@ -66,11 +67,12 @@ sudo ./venv/bin/python3 ./test-injection.py "${txInterface}mon" --channel "$txCh
 sudo ./venv/bin/python3 ./test-injection.py "${txInterface}mon" --channel "$txChannel"
 echo "done"
 
-# enable reciever 
+# enable reciever interface
 sudo ifconfig ${rxInterface} up
 sudo airmon-ng check kill
 sudo airmon-ng start "${rxInterface}" "$rxChannel"
 
+# handle case where interface name is assumed to automatically be turned into wlan<n>mon
 if ((${#rxInterface} > 12)); then
     # assumes no other wlan interfaces around other than tx
     if ((${#txInterface} > 12)); then
@@ -82,6 +84,24 @@ fi
 
 # manually up this new monitor interface
 sudo ifconfig "${rxInterface}mon" up
+
+# cause switch to 802.11b
+# THIS MUST HAPPEN ON BOTH THE TRANSMITTER AND RECEIVER. The effects may
+# be preserved so long as the device does not lose power, at least for the
+# Netgear A9000
+cd wifi-injection
+source "./venv/bin/activate"
+sudo ./venv/bin/python3 ./test-injection.py "${rxInterface}mon" --channel "$rxChannel"
+sudo ./venv/bin/python3 ./test-injection.py "${rxInterface}mon" --channel "$rxChannel"
+sudo ./venv/bin/python3 ./test-injection.py "${rxInterface}mon" --channel "$rxChannel"
+sudo ./venv/bin/python3 ./test-injection.py "${rxInterface}mon" --channel "$rxChannel"
+sudo ./venv/bin/python3 ./test-injection.py "${rxInterface}mon" --channel "$rxChannel"
+sudo ./venv/bin/python3 ./test-injection.py "${rxInterface}mon" --channel "$rxChannel"
+echo "done"
+
+# the reciever MUST be instructed to accept packets with a bad fcs, which is controlled @ the hardware/driver level
+# if the device does not support this, this line will throw an error
+sudo iw dev "${rxInterface}mon" set monitor fcsfail
 
 # start transmitting
 cd ../
